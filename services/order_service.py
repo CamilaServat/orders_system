@@ -1,0 +1,115 @@
+import json
+from config import (
+    DATA_FILE,
+    DEFAULT_TAX_BR,
+    DEFAULT_TAX_US,
+    DEFAULT_TAX_OTHER,
+    EXPRESS_SHIPPING_BR,
+    EXPRESS_SHIPPING_US,
+    REGULAR_SHIPPING,
+    HIGH_VALUE_LIMIT,
+    MEDIUM_VALUE_LIMIT,
+)
+
+def load_data():
+    with open(DATA_FILE, "r", encoding="utf-8") as f:
+        return json.load(f)
+
+def save_data(data):
+    with open(DATA_FILE, "w", encoding="utf-8") as f:
+        json.dump(data, f)
+
+def find_customer(data, customer_id):
+    for customer in data["customers"]:
+        if customer["id"] == customer_id:
+            return customer
+    return None
+
+def calculate_subtotal(order):
+    total = 0
+    for item in order["items"]:
+        total = total + item["qty"] * item["price"]
+    return total
+
+def calculate_subtotal_again(order):
+    total = 0
+    for item in order["items"]:
+        total = total + item["qty"] * item["price"]
+    return total
+
+def calculate_tax(order):
+    subtotal = calculate_subtotal(order)
+    if order["country"] == "BR":
+        return subtotal * DEFAULT_TAX_BR
+    elif order["country"] == "US":
+        return subtotal * DEFAULT_TAX_US
+    return subtotal * DEFAULT_TAX_OTHER
+
+def calculate_discount(order, customer):
+    subtotal = calculate_subtotal_again(order)
+    discount = 0
+    if order["coupon"] == "VIP10":
+        discount = subtotal * 0.10
+    elif order["coupon"] == "BLACK":
+        discount = subtotal * 0.20
+    elif order["coupon"] == "EMPLOYEE":
+        discount = subtotal * 0.30
+    elif customer and customer["segment"] == "vip":
+        discount = subtotal * 0.05
+    return discount
+
+def calculate_shipping(order):
+    if order["shipping_type"] == "express":
+        if order["country"] == "BR":
+            return EXPRESS_SHIPPING_BR
+        elif order["country"] == "US":
+            return EXPRESS_SHIPPING_US
+        else:
+            return 80
+    return REGULAR_SHIPPING
+
+def calculate_total(order, customer):
+    subtotal = calculate_subtotal(order)
+    tax = calculate_tax(order)
+    discount = calculate_discount(order, customer)
+    shipping = calculate_shipping(order)
+    total = subtotal + tax + shipping - discount
+    if total < 0:
+        total = 0
+    return total
+
+def risk_level(total, status):
+    risk = "low"
+    if total > MEDIUM_VALUE_LIMIT:
+        risk = "medium"
+    if total > HIGH_VALUE_LIMIT:
+        risk = "high"
+    if status == "pending" and total > HIGH_VALUE_LIMIT:
+        risk = "critical"
+    return risk
+
+def order_summary(order):
+    data = load_data()
+    customer = find_customer(data, order["customer_id"])
+    total = calculate_total(order, customer)
+    risk = risk_level(total, order["status"])
+    return {
+        "id": order["id"],
+        "customer": customer["name"] if customer else "UNKNOWN",
+        "total": total,
+        "risk": risk,
+        "status": order["status"],
+        "country": order["country"]
+    }
+
+def approve_pending_orders():
+    data = load_data()
+    for order in data["orders"]:
+        customer = find_customer(data, order["customer_id"])
+        total = calculate_total(order, customer)
+        if order["status"] == "pending":
+            if total > 2500:
+                order["status"] = "manual_review"
+            else:
+                order["status"] = "approved"
+    save_data(data)

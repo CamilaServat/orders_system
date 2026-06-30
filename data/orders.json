@@ -1,0 +1,100 @@
+{
+  "customers": [
+    {
+      "id": 1,
+      "name": "Ana",
+      "segment": "vip",
+      "region": "south"
+    },
+    {
+      "id": 2,
+      "name": "Carlos",
+      "segment": "regular",
+      "region": "north"
+    },
+    {
+      "id": 3,
+      "name": "Bruna",
+      "segment": "vip",
+      "region": "south"
+    },
+    {
+      "id": 4,
+      "name": "Diego",
+      "segment": "regular",
+      "region": "west"
+    }
+  ],
+  "orders": [
+    {
+      "id": 1001,
+      "customer_id": 1,
+      "items": [
+        {
+          "sku": "A1",
+          "qty": 2,
+          "price": 120.0
+        },
+        {
+          "sku": "B4",
+          "qty": 1,
+          "price": 35.5
+        }
+      ],
+      "country": "BR",
+      "coupon": "VIP10",
+      "shipping_type": "express",
+      "status": "pending"
+    },
+    {
+      "id": 1002,
+      "customer_id": 2,
+      "items": [
+        {
+          "sku": "C1",
+          "qty": 1,
+          "price": 999.99
+        },
+        {
+          "sku": "K2",
+          "qty": 2,
+          "price": 40.0
+        }
+      ],
+      "country": "US",
+      "coupon": "",
+      "shipping_type": "regular",
+      "status": "paid"
+    },
+    {
+      "id": 1003,
+      "customer_id": 3,
+      "items": [
+        {
+          "sku": "D1",
+          "qty": 1,
+          "price": 1500.0
+        }
+      ],
+      "country": "BR",
+      "coupon": "BLACK",
+      "shipping_type": "express",
+      "status": "pending"
+    },
+    {
+      "id": 1004,
+      "customer_id": 4,
+      "items": [
+        {
+          "sku": "F7",
+          "qty": 5,
+          "price": 20.0
+        }
+      ],
+      "country": "AR",
+      "coupon": "",
+      "shipping_type": "regular",
+      "status": "cancelled"
+    }
+  ]
+}
