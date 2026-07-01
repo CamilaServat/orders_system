@@ -25,6 +25,12 @@ def find_customer(data, customer_id):
             return customer
     return None
 
+def find_order(data, order_id):
+    for order in data["orders"]:
+        if order["id"] == order_id:
+            return order
+    return None
+
 def calculate_subtotal(order):
     total = 0
     for item in order["items"]:
@@ -113,3 +119,85 @@ def approve_pending_orders():
             else:
                 order["status"] = "approved"
     save_data(data)
+
+# --- TP2: Evolução - Alteração controlada de status de pedido ---------------
+#
+# Fluxo principal suportado por esta evolução:
+#   pending -> paid -> shipped -> delivered
+#   pending -> cancelled
+#   paid -> cancelled
+#
+# "approved" e "manual_review" são estados gerados pela rotina automática
+# approve_pending_orders() (já existente no sistema legado) e ficam fora do
+# escopo desta evolução: não são alterados manualmente por aqui, para não
+# impactar a regra de negócio já existente. Por isso aparecem como estados
+# terminais (sem transições manuais) nesta máquina de estados.
+ORDER_STATUS_FLOW = {
+    "pending": {"paid", "cancelled"},
+    "paid": {"shipped", "cancelled"},
+    "shipped": {"delivered"},
+    "delivered": set(),
+    "cancelled": set(),
+    "approved": set(),
+    "manual_review": set(),
+}
+
+VALID_STATUSES = set(ORDER_STATUS_FLOW.keys())
+
+def get_allowed_next_statuses(order_id):
+    """Retorna a lista de status válidos como próximo passo para um pedido."""
+    data = load_data()
+    order = find_order(data, order_id)
+    if order is None:
+        return []
+    return sorted(ORDER_STATUS_FLOW.get(order["status"], set()))
+
+def update_order_status(order_id, new_status):
+    """
+    Altera o status de um pedido respeitando a sequência lógica de evolução
+    (pending -> paid -> shipped -> delivered), permitindo cancelamento em
+    pending ou paid, e impedindo transições inválidas.
+
+    Retorna um dicionário com:
+      - success: bool
+      - message: str (mensagem clara de sucesso ou erro)
+      - order: dict do pedido atualizado (apenas quando success=True)
+    """
+    new_status = (new_status or "").strip().lower()
+
+    data = load_data()
+    order = find_order(data, order_id)
+
+    if order is None:
+        return {
+            "success": False,
+            "message": f"Order {order_id} not found.",
+        }
+
+    if new_status not in VALID_STATUSES:
+        return {
+            "success": False,
+            "message": f"Unknown status '{new_status}'. Valid statuses: {sorted(VALID_STATUSES)}.",
+        }
+
+    current_status = order["status"]
+    allowed = ORDER_STATUS_FLOW.get(current_status, set())
+
+    if new_status not in allowed:
+        return {
+            "success": False,
+            "message": (
+                f"Invalid transition for order {order_id}: "
+                f"'{current_status}' -> '{new_status}'. "
+                f"Allowed next status(es): {sorted(allowed) if allowed else 'none (terminal status)'}."
+            ),
+        }
+
+    order["status"] = new_status
+    save_data(data)
+
+    return {
+        "success": True,
+        "message": f"Order {order_id} status updated: '{current_status}' -> '{new_status}'.",
+        "order": order,
+    }
