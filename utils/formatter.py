@@ -8,14 +8,14 @@ def normalize_name_again(name):
     return name.strip().title()
 
 def status_label(status):
-    if status == "paid":
-        return "Paid"
-    elif status == "pending":
-        return "Pending"
-    elif status == "approved":
-        return "Approved"
-    elif status == "manual_review":
-        return "Manual Review"
-    elif status == "cancelled":
-        return "Cancelled"
-    return "Unknown"
+    labels = {
+        "pending": "Pending",
+        "paid": "Paid",
+        "approved": "Approved",
+        "manual_review": "Manual Review",
+        "shipped": "Shipped",
+        "delivered": "Delivered",
+        "cancelled": "Cancelled",
+    }
+
+    return labels.get(status, "Unknown")

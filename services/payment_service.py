@@ -21,8 +21,14 @@ def calculate_discount_again(order, customer):
     return 0
 
 def payment_label(status):
-    if status in ["paid", "approved"]:
-        return "OK"
-    elif status == "pending":
-        return "WAITING"
-    return "CHECK"
+    labels = {
+        "pending": "WAITING",
+        "paid": "PAID",
+        "approved": "APPROVED",
+        "manual_review": "UNDER REVIEW",
+        "shipped": "SHIPPED",
+        "delivered": "DELIVERED",
+        "cancelled": "CANCELLED",
+    }
+
+    return labels.get(status, "UNKNOWN")
